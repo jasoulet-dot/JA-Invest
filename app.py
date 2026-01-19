@@ -1,74 +1,70 @@
 import streamlit as st
 import pandas as pd
+import yfinance as yf
+from datetime import datetime, timedelta
 
-# Configuration de la page pour mobile
-st.set_page_config(page_title="Invest Dash 2026", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="Smart Invest 2026", layout="wide")
 
-# --- STYLE PERSONNALISÉ ---
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    </style>
-    """, unsafe_allow_html=True)
+# --- FONCTION DE RÉCUPÉRATION DATA ---
+def get_stock_data(ticker):
+    try:
+        data = yf.Ticker(ticker).history(period="1y")
+        return data['Close'].iloc[-1], data['Close'].iloc[-2]
+    except:
+        return 0, 0
 
-st.title("📊 Mon Pilotage Stratégique")
+# --- HEADER ---
+st.title("🚀 Mon Pilotage Stratégique 2026")
+st.caption(f"Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
-# --- BARRE LATÉRALE (SIDEBAR) ---
-st.sidebar.header("💰 Capital & Flux")
-st.sidebar.metric("Réserve de chasse", "150 €")
-st.sidebar.write("---")
-st.sidebar.write("**Plans Auto :**")
-st.sidebar.caption("💧 Xylem : 10€ / semaine")
-st.sidebar.caption("💻 GAFAM : 100€ / mois")
+# --- SECTION 1 : MATRICE DE DÉCISION AUTOMATIQUE ---
+st.header("🎯 Matrice de Décision")
+btc_price, btc_old = get_stock_data("BTC-EUR")
+nd_price, nd_old = get_stock_data("NB2.DE") # Northern Data
 
-# --- ONGLET 1 : PORTEFEUILLE & VIGILANCE ---
-tab1, tab2, tab3 = st.tabs(["🎯 Suivi Actif", "💎 Radar Pépites", "📈 Sentiment & Crypto"])
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Sentiment Marché", "PEUR (Fear)", "-12% vs hier")
+    st.info("💡 Stratégie : Zone d'accumulation. Ne pas vendre.")
+with col2:
+    st.metric("Bitcoin (Lien Northern Data)", f"{btc_price:,.0f} €", f"{((btc_price/btc_old)-1)*100:.2f}%")
+with col3:
+    st.metric("Northern Data", f"{nd_price:.2f} €", f"{((nd_price/nd_old)-1)*100:.2f}%")
 
-with tab1:
-    st.subheader("Mes Positions en Cours")
+# --- SECTION 2 : CALENDRIER RISQUES & OPPORTUNITÉS (M+1) ---
+st.header("📅 Calendrier Stratégique (Janv/Fév 2026)")
+cal_data = {
+    "Date": ["19/01", "20/01", "22/01", "28/01", "30/01", "05/02"],
+    "Événement": ["MLK Day (Fermeture US)", "Réouverture Wall Street", "Résultats Netflix", "Résultats Microsoft/Google", "Décision Taux (Fed)", "Résultats Kering"],
+    "Impact": ["🧊 Nul", "⚡ Volatilité Haute", "🎬 Secteur Streaming", "💻 Crucial pour l'IA", "💵 Tendance Marché", "👜 Luxe / Gucci"],
+    "Action": ["Attendre", "Observer le rebond", "Vigilance GAFAM", "Opportunité achat ?", "Gestion du cash", "Surveiller point bas"]
+}
+st.table(pd.DataFrame(cal_data))
+
+# --- SECTION 3 : PILOTAGE SALESFORCE (BREAK-EVEN) ---
+st.header("🧮 Calculateur de Sortie : Salesforce")
+col_sf1, col_sf2 = st.columns(2)
+with col_sf1:
+    prix_achat = st.number_input("Ton prix d'achat moyen ($)", value=259.0)
+    quantite = st.number_input("Nombre d'actions possédées", value=0.40) # Env 100€
+    prix_actuel, _ = get_stock_data("CRM")
     
-    # Données de ton portefeuille
-    df = pd.DataFrame({
-        "Actif": ["Salesforce", "Kering", "Northern Data", "Xylem"],
-        "Statut": ["🔴 Vigilance", "🟡 Patience", "👀 Observation", "✅ DCA Actif"],
-        "Action": ["Attendre rebond US", "Support 280€", "Suivre BTC", "Lissage auto"]
-    })
-    st.table(df)
+    perte_gain = (prix_actuel - prix_achat) * quantite
+    st.subheader(f"Statut : {'🔴 Perte' if perte_gain < 0 else '🟢 Gain'}")
+    st.write(f"Montant : {perte_gain:.2f} $")
 
-    st.info("**💡 Note d'anticipation :** Wall Street était fermé ce lundi (MLK Day). Attention à la réouverture du mardi 20/01 à 15h30 pour confirmer la tendance sur la Tech.")
+with col_sf2:
+    st.write("📈 **Objectif de récupération :**")
+    diff = prix_achat - prix_actuel
+    if diff > 0:
+        st.error(f"L'action doit reprendre **{diff:.2f} $** ({((prix_achat/prix_actuel)-1)*100:.1f}%) pour atteindre ton point mort.")
+    else:
+        st.success("Tu es en profit !")
 
-# --- ONGLET 2 : RADAR PÉPITES ---
-with tab2:
-    st.subheader("Opportunités à saisir (Hors GAFAM)")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("🚢 **Exail Technologies (EXAIL)**")
-        st.caption("Pépite Robotique/Défense. Carnet de commandes record pour drones marins. Très solide face à la purge Tech.")
-        
-        st.write("🔬 **Sanofi**")
-        st.caption("Alternative stable à Zealand. Gros dividende et moins de volatilité.")
-
-    with col2:
-        st.write("🏗️ **Air Liquide**")
-        st.caption("Le 'Airbus' des gaz industriels. Idéal pour sécuriser tes futures entrées d'argent.")
-        
-        st.write("🛡️ **Waste Management**")
-        st.caption("Secteur déchets. L'action anti-crise par excellence.")
-
-# --- ONGLET 3 : SENTIMENT & CRYPTO ---
-with tab3:
-    st.subheader("Analyse du Marché")
-    
-    s1, s2 = st.columns(2)
-    with s1:
-        st.metric("Sentiment Global", "Peur (22/100)", "-5%")
-        st.caption("Zone d'opportunité historique si on a une vision long terme.")
-        
-    with s2:
-        st.metric("Bitcoin (BTC)", "79 600 €", "-2.4%")
-        st.caption("Impact direct sur Northern Data. Support clé à surveiller.")
-
-    st.markdown("---")
-    st.write("🔔 **Prochaine Analyse :** Demain à 08:00")
+# --- SECTION 4 : RADAR PÉPITES ---
+st.header("💎 Le Radar à Pépites")
+st.write("Actions à surveiller pour tes 150€ restants :")
+col_p1, col_p2, col_p3 = st.columns(3)
+col_p1.button("ASML (Tech Safe)")
+col_p2.button("Exail (Défense/Robotique)")
+col_p3.button("Air Liquide (Stabilité)")
