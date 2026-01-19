@@ -25,21 +25,47 @@ tab_radar, tab_suivi, tab_cal, tab_crypto = st.tabs([
 
 # --- TAB 1 : RADAR PÉPITES ---
 with tab_radar:
-    st.header("Le Radar (Max 4)")
-    st.info("Coche pour garder, décoche pour libérer une place à 8h.")
+    st.header("💎 Radar Décisionnel (Max 4)")
+    st.caption("Données en temps réel (Yahoo Finance)")
     
-    # On peut changer ces noms ensemble chaque semaine
-    liste_p = ["ASML", "Exail Tech", "Air Liquide", "Sanofi"]
-    cols = st.columns(2) # 2x2 pour mobile
+    # Configuration des pépites et de leurs objectifs analystes
+    # On mettra à jour cette liste et les targets ensemble
+    pépites_config = {
+        "ASML": {"ticker": "ASML", "target": 850.0},
+        "Exail Tech": {"ticker": "EXA.PA", "target": 28.0},
+        "Air Liquide": {"ticker": "AI.PA", "target": 195.0},
+        "Sanofi": {"ticker": "SAN.PA", "target": 110.0}
+    }
     
-    for i, p in enumerate(liste_p):
+    cols = st.columns(2)
+    for i, (nom, config) in enumerate(pépites_config.items()):
         with cols[i % 2]:
-            st.subheader(p)
-            keep = st.checkbox(f"Conserver {i+1}", value=True, key=f"k{i}")
-            if not keep:
-                st.write("🆕 *Place libre pour demain*")
-            else:
-                st.caption("✅ Sous surveillance")
+            # Récupération des données étendues
+            stock = yf.Ticker(config['ticker'])
+            hist = stock.history(period="8d") # 8 jours pour avoir 7 jours glissants
+            
+            if not hist.empty:
+                prix_actuel = hist['Close'].iloc[-1]
+                var_jour = ((hist['Close'].iloc[-1] / hist['Close'].iloc[-2]) - 1) * 100
+                var_7j = ((hist['Close'].iloc[-1] / hist['Close'].iloc[0]) - 1) * 100
+                cible = config['target']
+                potentiel = ((cible / prix_actuel) - 1) * 100
+                
+                # Affichage de la carte
+                st.subheader(nom)
+                st.metric(f"{prix_actuel:.2f} €", f"{var_jour:.2f}% (24h)", delta_color="normal")
+                
+                st.write(f"📈 **7 jours :** {var_7j:+.2f}%")
+                st.write(f"🎯 **Cible :** {cible} €")
+                
+                # Barre de progression du potentiel
+                st.progress(min(max(potentiel/50, 0.0), 1.0)) # 50% max pour la barre
+                st.caption(f"Potentiel théorique : **{potentiel:.1f}%**")
+                
+                keep = st.checkbox(f"Garder {nom}", value=True, key=f"k{i}")
+                if not keep:
+                    st.info("🔄 À remplacer demain à 8h")
+                st.markdown("---")
 
 # --- TAB 2 : SUIVI & BREAK-EVEN ---
 with tab_suivi:
@@ -81,3 +107,4 @@ with tab_crypto:
     
     if v_btc < -2:
         st.warning("⚠️ Baisse crypto : Northern Data risque de suivre.")
+
